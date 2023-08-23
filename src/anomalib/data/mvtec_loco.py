@@ -1,12 +1,12 @@
-"""MVTec AD Dataset (CC BY-NC-SA 4.0).
+"""MVTec LOCO Dataset (CC BY-NC-SA 4.0).
 
 Description:
     This script contains PyTorch Dataset, Dataloader and PyTorch
-        Lightning DataModule for the MVTec AD dataset.
+        Lightning DataModule for the MVTec LOCO dataset.
     If the dataset is not on the file system, the script downloads and
         extracts the dataset and create PyTorch data objects.
 License:
-    MVTec AD dataset is released under the Creative Commons
+    MVTec LOCO dataset is released under the Creative Commons
     Attribution-NonCommercial-ShareAlike 4.0 International License
     (CC BY-NC-SA 4.0)(https://creativecommons.org/licenses/by-nc-sa/4.0/).
 Reference:
@@ -14,13 +14,14 @@ Reference:
       The MVTec Anomaly Detection Dataset: A Comprehensive Real-World Dataset for
       Unsupervised Anomaly Detection; in: International Journal of Computer Vision
       129(4):1038-1059, 2021, DOI: 10.1007/s11263-020-01400-4.
-    - Paul Bergmann, Michael Fauser, David Sattlegger, Carsten Steger: MVTec AD —
-      A Comprehensive Real-World Dataset for Unsupervised Anomaly Detection;
-      in: IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR),
-      9584-9592, 2019, DOI: 10.1109/CVPR.2019.00982.
+    - Paul Bergmann, Killian Batzner, Michael Fauser, David Sattlegger, Carsten Steger:
+      Beyond Dents and Scratches: Logical Constraints in Unsupervised Anomaly Detection
+      and Localization;
+      in: International Journal of Computer Vision (130) 947-969, 2022,
+      DOI: 10.1007/s11263-022-01578-9.
 """
 
-# Copyright (C) 2022 Intel Corporation
+# Copyright (C) 2023 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 from __future__ import annotations
@@ -51,45 +52,39 @@ logger = logging.getLogger(__name__)
 IMG_EXTENSIONS = (".png", ".PNG")
 
 DOWNLOAD_INFO = DownloadInfo(
-    name="mvtec",
-    url="https://www.mydrive.ch/shares/38536/3830184030e49fe74747669442f0f282/download/420938113-1629952094"
-    "/mvtec_anomaly_detection.tar.xz",
-    hash="eefca59f2cede9c3fc5b6befbfec275e",
+    name="mvtec_loco",
+    url="https://www.mydrive.ch/shares/48237/1b9106ccdfbb09a0c414bd49fe44a14a/download/430647091-1646842701"
+    "/mvtec_loco_anomaly_detection.tar.xz",
+    hash="d40f092ac6f88433f609583c4a05f56f",
 )
 
 CATEGORIES = (
-    "bottle",
-    "cable",
-    "capsule",
-    "carpet",
-    "grid",
-    "hazelnut",
-    "leather",
-    "metal_nut",
-    "pill",
-    "screw",
-    "tile",
-    "toothbrush",
-    "transistor",
-    "wood",
-    "zipper",
+    "breakfast_box",
+    "juice_bottle",
+    "pushpins",
+    "screw_bag",
+    "splicing_connectors"
 )
 
+DEFECT_TYPES = (
+    "logical_anomalies",
+    "structural_anomalies"
+)
 
-def make_mvtec_dataset(
+def make_mvtec_loco_dataset(
     root: str | Path, split: str | Split | None = None, extensions: Sequence[str] | None = None
 ) -> DataFrame:
-    """Create MVTec AD samples by parsing the MVTec AD data file structure.
+    """Create MVTec LOCO samples by parsing the MVTec LOCO data file structure.
 
     The files are expected to follow the structure:
-        path/to/dataset/split/category/image_filename.png
-        path/to/dataset/ground_truth/category/mask_filename.png
+        path/to/dataset/split/defect_type/image_filename.png
+        path/to/dataset/ground_truth/defect_type/image_number/image_filename.png
 
     This function creates a dataframe to store the parsed information based on the following format:
     |---|---------------|-------|---------|---------------|---------------------------------------|-------------|
     |   | path          | split | label   | image_path    | mask_path                             | label_index |
     |---|---------------|-------|---------|---------------|---------------------------------------|-------------|
-    | 0 | datasets/name |  test |  defect |  filename.png | ground_truth/defect/filename_mask.png | 1           |
+    | 0 | datasets/name |  test |  defect |  filename.png | ground_truth/defect/image_number      | 1           |
     |---|---------------|-------|---------|---------------|---------------------------------------|-------------|
 
     Args:
@@ -106,20 +101,20 @@ def make_mvtec_dataset(
     Examples:
         The following example shows how to get training samples from MVTec AD bottle category:
 
-        >>> root = Path('./MVTec')
-        >>> category = 'bottle'
+        >>> root = Path('./MVTec_LOCO')
+        >>> category = 'breakfast_box'
         >>> path = root / category
         >>> path
-        PosixPath('MVTec/bottle')
+        PosixPath('MVTec_LOCO/breakfast_box')
 
-        >>> samples = make_mvtec_dataset(path, split='train', split_ratio=0.1, seed=0)
+        >>> samples = make_mvtec_loco_dataset(path, split='test', split_ratio=0.1, seed=0)
         >>> samples.head()
-           path         split label image_path                           mask_path                   label_index
-        0  MVTec/bottle train good MVTec/bottle/train/good/105.png MVTec/bottle/ground_truth/good/105_mask.png 0
-        1  MVTec/bottle train good MVTec/bottle/train/good/017.png MVTec/bottle/ground_truth/good/017_mask.png 0
-        2  MVTec/bottle train good MVTec/bottle/train/good/137.png MVTec/bottle/ground_truth/good/137_mask.png 0
-        3  MVTec/bottle train good MVTec/bottle/train/good/152.png MVTec/bottle/ground_truth/good/152_mask.png 0
-        4  MVTec/bottle train good MVTec/bottle/train/good/109.png MVTec/bottle/ground_truth/good/109_mask.png 0
+           path                     split label image_path                                 mask_path                                               label_index
+        0  MVTec_LOCO/breakfast_box test good MVTec_LOCO/breakfast_box/train/good/105.png MVTec_LOCO/breakfast_box/ground_truth/good/105 0
+        1  MVTec_LOCO/breakfast_box test good MVTec_LOCO/breakfast_box/train/good/017.png MVTec_LOCO/breakfast_box/ground_truth/good/017 0
+        2  MVTec_LOCO/breakfast_box test good MVTec_LOCO/breakfast_box/train/good/137.png MVTec_LOCO/breakfast_box/ground_truth/good/137 0
+        3  MVTec_LOCO/breakfast_box test good MVTec_LOCO/breakfast_box/train/good/152.png MVTec_LOCO/breakfast_box/ground_truth/good/152 0
+        4  MVTec_LOCO/breakfast_box test good MVTec_LOCO/breakfast_box/train/good/109.png MVTec_LOCO/breakfast_box/ground_truth/good/109 0
 
     Returns:
         DataFrame: an output dataframe containing the samples of the dataset.

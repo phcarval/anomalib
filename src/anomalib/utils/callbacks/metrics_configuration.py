@@ -28,6 +28,7 @@ class MetricsConfigurationCallback(Callback):
         task: TaskType = TaskType.SEGMENTATION,
         image_metrics: list[str] | None = None,
         pixel_metrics: list[str] | None = None,
+        multiple_ground_truths_per_image: bool = False
     ) -> None:
         """Create image and pixel-level AnomalibMetricsCollection.
 
@@ -40,10 +41,16 @@ class MetricsConfigurationCallback(Callback):
             task (TaskType): Task type of the current run.
             image_metrics (list[str] | None): List of image-level metrics.
             pixel_metrics (list[str] | None): List of pixel-level metrics.
+            multiple_ground_truths_per_image (bool, optional): Whether
+            metrics should be calculated for each ground truth layer (e.g.
+            MVTec LOCO dataset contains several ground truths per image).
+            These regions should be used invidually for certain metrics (e.g.
+            sPRO) but should be merged together otherwise?
         """
         self.task = task
         self.image_metric_names = image_metrics
         self.pixel_metric_names = pixel_metrics
+        self.multiple_ground_truths_per_image = multiple_ground_truths_per_image
 
     def setup(
         self,

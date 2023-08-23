@@ -89,10 +89,14 @@ def get_callbacks(config: DictConfig | ListConfig) -> list[Callback]:
     callbacks.append(post_processing_callback)
 
     # Add metric configuration to the model via MetricsConfigurationCallback
+    multiple_ground_truths_per_image = False
+    if config.dataset.format.lower() in ("mvtec_loco"):
+        multiple_ground_truths_per_image = True
     metrics_callback = MetricsConfigurationCallback(
         config.dataset.task,
         config.metrics.get("image", None),
         config.metrics.get("pixel", None),
+        multiple_ground_truths_per_image
     )
     callbacks.append(metrics_callback)
 
